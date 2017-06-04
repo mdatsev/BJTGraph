@@ -1,14 +1,19 @@
 const SIDEBAR_WIDTH = 200;
-let COLORS = {
+let colors = {
     background: 0,
     point: 255,
     sidebar: 100,
-    gridLines: "white"
+    gridLines: "white",
+    loadline: "green",
+    OC: "red",
+    Uce: "blue",
+    Ic: "yellow",
+    Ib: "magenta",
+    IcIb0: "brown"
 };
 let draw_width = 3;
 let controlPoints = [];
 let seed;
-let nPoints = 180;
 let nLabels = 5;
 let running = false;
 let multiplier = 0.5;
@@ -24,8 +29,14 @@ let inputs = {
     Rc: 1000,
     IbMax: 0.0001,
     IbMin: 0,
-    IcIb0: 0.0004
+    IcIb0: 0.0004,
+    nPoints: 150,
+    speed: 1,
+    frequency: 1
 };
+
+let fakeSlope = 1.1;
+let IbGraphOffset;
 
 let UceRange = 2 * inputs.Ec;
 let IcRange = 2 * inputs.Ec / inputs.Rc;
@@ -40,18 +51,18 @@ let minDimension;
 function setup() {
     angleMode(DEGREES);
     minDimension = min(windowWidth, windowHeight);
-    Object.keys(COLORS).map((col) => color(COLORS[col]));
     xScale = (minDimension - 2 * LABEL_SPACING) / (2 * UceRange) * 0.9;
     yScale = (minDimension - 2 * LABEL_SPACING) / (2 * IcRange) * 0.9;
     LLLength = sqrt(((inputs.Ec * xScale) ** 2) + ((inputs.Ec / inputs.Rc * yScale) ** 2));
+    IbGraphOffset = minDimension / 4;
     createCanvas(windowWidth, windowHeight);
-    background(COLORS.background);
+    background(colors.background);
     createGUI();
     createLayout();
 }
 
 function clearDraw() {
-    background(COLORS.background);
+    background(colors.background);
     createGUI();
     createLayout();
 }
@@ -63,13 +74,13 @@ function draw() {
         let Ec = inputs.Ec;
         let Rc = inputs.Rc;
         let Rce = inputs.rcsat;
-        ibdeg += 1;
+        ibdeg += inputs.speed;
         if (ibdeg > 360) ibdeg = 0;
         let lastUcePoint;
         let lastIcPoint;
         let lastIbPoint;
-        for (let i = 0; i < nPoints; i++) {
-            let ib = inputs.IbMin + (1 + sin(ibdeg + 360 * i / nPoints)) * (inputs.IbMax - inputs.IbMin) / 2;
+        for (let i = 0; i < inputs.nPoints; i++) {
+            let ib = inputs.IbMin + (1 + sin(ibdeg + inputs.frequency * 360 * i / inputs.nPoints)) * (inputs.IbMax - inputs.IbMin) / 2;
             let Ic = ib * inputs.h21e;
 
             if (Ic > Ec / Rc)
@@ -81,20 +92,20 @@ function draw() {
                 goToMainGraph();
 
                 //loadline
-                stroke("green");
+                stroke(colors.loadline);
                 plotLine(Ec, 0, 0, Ec / Rc);
 
                 //output characteristics
                 let x2 = UceRange;
                 let y1 = ib * inputs.h21e;
                 let x1 = y1 * Rce;
-                let y2 = y1 * 1.1;
-                stroke("red");
+                let y2 = y1 * fakeSlope;
+                stroke(colors.OC);
                 plotLine(0, 0, x1, y1);
                 plotLine(x1, y1, x2, y2);
 
                 //IcIb0
-                stroke("brown");
+                stroke(colors.IcIb0);
                 plotLine(0, inputs.IcIb0, UceRange, inputs.IcIb0);
             }
 
@@ -108,18 +119,18 @@ function draw() {
 
             if (i > 0) {
                 goToUceGraph();
-                stroke("blue");
-                plotLine(lastUcePoint.x, lastUcePoint.y, Uce, i * IcRange / nPoints);
+                stroke(colors.Ic);
+                plotLine(lastUcePoint.x, lastUcePoint.y, Uce, i * IcRange / inputs.nPoints);
                 goToIcGraph();
-                stroke("yellow");
-                plotLine(lastIcPoint.x, lastIcPoint.y, i * UceRange / nPoints, Ic);
+                stroke(colors.Uce);
+                plotLine(lastIcPoint.x, lastIcPoint.y, i * UceRange / inputs.nPoints, Ic);
                 goToIbGraph();
-                stroke("magenta");
-                line(lastIbPoint.x, lastIbPoint.y, i * timeLength / nPoints, -ib * LLLength / inputs.IbMax)
+                stroke(colors.Ib);
+                line(lastIbPoint.x, lastIbPoint.y, i * timeLength / inputs.nPoints, -ib * LLLength / inputs.IbMax)
             }
-            lastUcePoint = { x: Uce, y: i * IcRange / nPoints };
-            lastIcPoint = { x: i * UceRange / nPoints, y: Ic };
-            lastIbPoint = { x: i * timeLength / nPoints, y: -ib * LLLength / inputs.IbMax }
+            lastUcePoint = { x: Uce, y: i * IcRange / inputs.nPoints };
+            lastIcPoint = { x: i * UceRange / inputs.nPoints, y: Ic };
+            lastIbPoint = { x: i * timeLength / inputs.nPoints, y: -ib * LLLength / inputs.IbMax }
         }
         createLayout();
     }
@@ -202,7 +213,7 @@ function createLayout() {
             -yScale * i * IcRange / nLabels);
     }
 
-    stroke("white");
+    stroke(colors.gridLines);
     goToIbGraph();
     line(0, 0, 0, -LLLength);
     timeLength = LLLength * 1.6;
@@ -228,7 +239,7 @@ function humanize(x) {
 }
 
 function createGUI() {
-    fill(COLORS.sidebar);
+    fill(colors.sidebar);
     //rect(0, 0, SIDEBAR_WIDTH, windowHeight);
     var i = 0;
     Object.keys(inputs).forEach((inp) => {
@@ -291,5 +302,5 @@ function goToIbGraph() {
     goToMainGraph();
     translate(inputs.Ec * xScale, 0);
     rotate(atan2(1 / xScale, inputs.Rc / yScale) - 90);
-    translate(160, 0);
+    translate(IbGraphOffset, 0);
 }

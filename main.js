@@ -99,7 +99,7 @@ function draw() {
                 //output characteristics
                 let x2 = UceRange * OCxLength;
                 let y1 = ib * inputs.h21e;
-                let x1 = y1 * Rce;
+                let x1 = min(UceRange * OCxLength, y1 * Rce);
                 let y2 = y1 * fakeSlope;
                 stroke(colors.OC);
                 plotLine(0, 0, x1, y1);
@@ -279,7 +279,8 @@ function createGUI() {
             });*/
             input.input(() => {
                 // $(input.elt).css('border', 'solid red');
-                inputs[inp] = parseFloat(input.value());
+                if (!isNaN(parseFloat(input.value())))
+                    inputs[inp] = parseFloat(input.value());
             });
         }
         i++;
@@ -335,6 +336,8 @@ function goToIbGraph() {
 }
 
 function calculateScalings() {
+    UceRange = 2 * inputs.Ec;
+    IcRange = 2 * inputs.Ec / inputs.Rc;
     graphs_spacing = min(windowWidth, windowHeight) / 16;
     minDimension = min(windowWidth - sidebar_width - LABEL_MARGIN - graphs_spacing, windowHeight - graphs_spacing);
     sidebar_width = windowWidth / 8;

@@ -75,7 +75,7 @@ function draw() {
         let Ec = inputs.Ec;
         let Rc = inputs.Rc;
         let Rce = inputs.rcsat;
-        ibdeg += inputs.speed;
+        ibdeg -= inputs.speed;
         if (ibdeg > 360) ibdeg = 0;
         let lastUcePoint;
         let lastIcPoint;
